@@ -100,10 +100,14 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/w0fv1/fmapper")
+            // GitHub Packages Maven endpoint is tied to the GitHub repository that hosts the package.
+            // This repository is LaiQiInfoTech/fmapper, so publish to that namespace.
+            url = uri("https://maven.pkg.github.com/LaiQiInfoTech/fmapper")
             credentials {
-                username = "w0fv1" // 你的 GitHub 用户名
-                password = System.getProperty("gpr.token") // 从系统属性中读取 Token
+                // For GitHub Actions, use GITHUB_ACTOR + GITHUB_TOKEN (passed as -Dgpr.token).
+                // For local publishing, pass -Dgpr.user=... -Dgpr.token=...
+                username = System.getProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = System.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
