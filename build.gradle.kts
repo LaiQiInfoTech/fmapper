@@ -5,7 +5,23 @@ plugins {
 }
 
 group = "dev.w0fv1"
-version = "0.0.4"
+
+// Release versioning:
+// - Local/dev: keep a default version.
+// - CI/tag build: when pushing a tag like `v0.0.5`, publish version `0.0.5`.
+val releaseVersion = run {
+    val fromProp = providers.gradleProperty("releaseVersion").orNull
+    if (!fromProp.isNullOrBlank()) return@run fromProp
+
+    val refType = System.getenv("GITHUB_REF_TYPE") // "tag" in GitHub Actions tag builds
+    val refName = System.getenv("GITHUB_REF_NAME") // the tag name, e.g. "v0.0.5"
+    if (refType == "tag" && !refName.isNullOrBlank() && refName.startsWith("v")) {
+        return@run refName.substring(1)
+    }
+
+    "0.0.4"
+}
+version = releaseVersion
 java.sourceCompatibility = JavaVersion.VERSION_21
 
 repositories {
@@ -18,16 +34,34 @@ dependencies {
     annotationProcessor("com.google.auto.service:auto-service:1.1.1")
 // https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
     implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
-// https://mvnrepository.com/artifact/com.squareup/javapoet
-    implementation("com.squareup:javapoet:1.13.0")
 
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("com.google.testing.compile:compile-testing:0.21.0")
+    testImplementation("org.ow2.asm:asm:9.7.1")
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val javacAddExports = listOf(
+    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+    "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+)
+
+tasks.withType<JavaCompile>().configureEach {
+    // Needed to compile javac AST injection helpers (Lombok-style).
+    options.compilerArgs.addAll(javacAddExports.flatMap { listOf("--add-exports", it) })
+}
+
+tasks.test {
+    // Needed to load com.sun.tools.javac.* during compile-testing runs.
+    jvmArgs(javacAddExports.map { "--add-exports=$it" })
 }
 
 
@@ -77,7 +111,16 @@ publishing {
 
 
 signing {
-    // 如果在构建时手动输入密码，可以使用 `useGpgCmd()` 启用命令行 GPG
-    useGpgCmd()
-    sign(publishing.publications["mavenJava"])
+    // GitHub Packages 不强制要求 GPG 签名。
+    // 默认不签名；需要签名时显式开启：`-Psigning=true`
+    val signingEnabled = providers.gradleProperty("signing")
+        .map { it.equals("true", ignoreCase = true) }
+        .orElse(false)
+        .get()
+
+    if (signingEnabled) {
+        // 如果在构建时手动输入密码，可以使用 `useGpgCmd()` 启用命令行 GPG
+        useGpgCmd()
+        sign(publishing.publications["mavenJava"])
+    }
 }
