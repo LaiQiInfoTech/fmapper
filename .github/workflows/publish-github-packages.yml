@@ -28,6 +28,30 @@ jobs:
       - name: Test
         run: ./gradlew test
 
+      - name: Delete existing package version (if any)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ORG="LaiQiInfoTech"
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Maven package name in GitHub Packages is typically `groupId.artifactId`.
+          # For this project: groupId=dev.w0fv1, artifactId=fmapper.
+          PKG="dev.w0fv1.fmapper"
+
+          echo "Trying to delete $ORG/$PKG version $VERSION (if it exists)..."
+
+          # Find version id; ignore if package/version doesn't exist or token lacks permission.
+          VERSION_ID="$(gh api "/orgs/$ORG/packages/maven/$PKG/versions?per_page=100" --paginate --jq ".[] | select(.name==\"$VERSION\") | .id" | head -n 1 || true)"
+          if [[ -n "${VERSION_ID:-}" ]]; then
+            gh api -X DELETE "/orgs/$ORG/packages/maven/$PKG/versions/$VERSION_ID"
+            echo "Deleted version id=$VERSION_ID"
+          else
+            echo "No existing version found (or unable to query)."
+          fi
+
       - name: Publish
         run: ./gradlew publish -Dgpr.token=${{ secrets.GITHUB_TOKEN }}
-
