@@ -1,6 +1,6 @@
-# Fmapper Library 0.0.4
+# Fmapper Library 0.1.0
 
-Fmapper 是一个编译期注解处理器库。它会为 `@Entity` 类自动生成字段 Mapper，减少手写 Setter 的重复代码。
+Fmapper 是一个编译期注解处理器库。它会为 `@Entity` 类注入静态内部类 `FieldMapper`，减少手写 Setter 的重复代码，并提供统一的 `set/get` 入口。
 
 ## 特性
 
@@ -21,17 +21,18 @@ Fmapper 是一个编译期注解处理器库。它会为 `@Entity` 类自动生�
 repositories {
     mavenCentral()
     maven {
-        url = uri("https://maven.pkg.github.com/w0fv1/fmapper")
+        url = uri("https://maven.pkg.github.com/LaiQiInfoTech/fmapper")
         credentials {
-            username = "YOUR_GITHUB_USERNAME"
+            // GitHub Actions: GITHUB_ACTOR / GITHUB_TOKEN
+            username = System.getenv("GITHUB_ACTOR")
             password = System.getenv("GITHUB_TOKEN")
         }
     }
 }
 
 dependencies {
-    implementation("dev.w0fv1:fmapper:0.0.4")
-    annotationProcessor("dev.w0fv1:fmapper:0.0.4")
+    implementation("dev.w0fv1:fmapper:0.1.0")
+    annotationProcessor("dev.w0fv1:fmapper:0.1.0")
 }
 ```
 
@@ -110,14 +111,22 @@ tasks.withType<JavaCompile>().configureEach {
 
 发布到 GitHub Packages 不需要 GPG 签名（本项目默认不签名）。
 
+在 GitHub Actions 中发布（推荐）：
+
 ```bash
-.\gradlew.bat publish -Dgpr.token=YOUR_GITHUB_TOKEN
+./gradlew publish -Dgpr.token=${GITHUB_TOKEN}
+```
+
+本机发布：
+
+```bash
+.\gradlew.bat publish -Dgpr.user=YOUR_GITHUB_USERNAME -Dgpr.token=YOUR_GITHUB_TOKEN
 ```
 
 如果你确实需要签名（可选）：
 
 ```bash
-.\gradlew.bat publish -Dgpr.token=YOUR_GITHUB_TOKEN -Psigning=true
+.\gradlew.bat publish -Dgpr.user=YOUR_GITHUB_USERNAME -Dgpr.token=YOUR_GITHUB_TOKEN -Psigning=true
 ```
 
 ## Sample

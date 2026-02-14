@@ -22,7 +22,14 @@ val releaseVersion = run {
     "0.0.4"
 }
 version = releaseVersion
-java.sourceCompatibility = JavaVersion.VERSION_21
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
 
 repositories {
     mavenCentral()
@@ -64,6 +71,14 @@ tasks.test {
     jvmArgs(javacAddExports.map { "--add-exports=$it" })
 }
 
+tasks.withType<Javadoc>().configureEach {
+    // Avoid Javadoc build failures in CI due to doclint and missing external docs.
+    (options as? StandardJavadocDocletOptions)?.apply {
+        addBooleanOption("Xdoclint:none", true)
+        addStringOption("encoding", "UTF-8")
+    }
+}
+
 
 //import org.gradle.plugins.signing.Sign
 publishing {
@@ -73,8 +88,8 @@ publishing {
 
             pom {
                 name.set("fmapper Library")
-                description.set("A library for mapping fields and entities.")
-                url.set("https://github.com/w0fv1/fmapper")
+                description.set("A compile-time annotation processor that injects MyEntity.FieldMapper into @Entity classes.")
+                url.set("https://github.com/LaiQiInfoTech/fmapper")
 
                 licenses {
                     license {
@@ -90,9 +105,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection.set("scm:git:git://github.com/w0fv1/fmapper.git")
-                    developerConnection.set("scm:git:ssh://github.com/w0fv1/fmapper.git")
-                    url.set("https://github.com/w0fv1/fmapper")
+                    connection.set("scm:git:git://github.com/LaiQiInfoTech/fmapper.git")
+                    developerConnection.set("scm:git:ssh://github.com/LaiQiInfoTech/fmapper.git")
+                    url.set("https://github.com/LaiQiInfoTech/fmapper")
                 }
             }
         }

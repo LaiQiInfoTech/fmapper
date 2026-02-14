@@ -1,0 +1,5 @@
+# Keep Gradle wrapper scripts working across Windows/Linux runners.
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+

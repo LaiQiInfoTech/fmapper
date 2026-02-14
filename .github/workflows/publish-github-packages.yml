@@ -28,7 +28,11 @@ jobs:
       - name: Test
         run: ./gradlew test
 
-      - name: Delete existing package version (if any)
+      # GitHub Packages Maven does not allow overwriting an existing version (409 Conflict).
+      # Best practice: do not reuse versions; bump the tag/version.
+      # If you really need to overwrite, set repository variable OVERWRITE_PACKAGE_VERSION=true.
+      - name: Delete existing package version (if enabled)
+        if: vars.OVERWRITE_PACKAGE_VERSION == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
